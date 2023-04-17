@@ -41,19 +41,19 @@ body {
 <body>	
 
 	<div class="container">
-    <form action="{{ url_for('password_recovery') }}" method="post">
-      {% if error is defined and error %}
-        <div class="alert alert-danger">{{ error }}</div>
-      {% endif %}
-      <center> <h1>Account Recovery</h1> </center> <br> <br>
-      <div class="form-group">
-        <br> <br> <b> <label for="email">Email</label> </b>
-        <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required> 
-      </div> <br> <br>
-      <button type="submit" class="btn btn-primary">Send Recovery Code</button> <br> <br> <br>  
-      <center> <p class="bottom">Remembered your password?  <a class="bottom" href="{{url_for('login')}}"> Login here</a></p> </center>
-    </form>
-  </div>
+	<form action="{{ url_for('account_recovery') }}" method="post">
+		{% if error is defined and error %}
+			<div class="alert alert-danger">{{ error }}</div>
+		{% endif %}
+    <center> <h1>Account Recovery</h1> </center> <br> <br>
+		<div class="form-group">
+			<br> <br> <b> <label for="email">Email</label> </b>
+			<input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required> 
+		</div> <br> <br>
+		<button type="submit" class="btn btn-primary">Send Recovery Code</button> <br> <br> <br>  
+		<center> <p class="bottom">Remembered your password?  <a class="bottom" href="{{url_for('login')}}"> Login here</a></p> </center>
+	</form>
+</div>
 
 </body>
 </html>

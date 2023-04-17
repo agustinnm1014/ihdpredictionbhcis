@@ -112,30 +112,6 @@ def register():
         alert_type = 'danger'
     return render_template('register.html', message=message, alert_type=alert_type)
 
-import random
-import string
-from datetime import datetime, timedelta
-
-@app.route('/password_recovery', methods=['GET', 'POST'])
-def password_recovery():
-    if request.method == 'POST':
-        email = request.form['email']
-        user = user.query.filter_by(email=email).first()
-        if user:
-            recovery_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-            recovery_code_expiry = datetime.now() + timedelta(minutes=30)
-            user.recovery_code = recovery_code
-            user.recovery_code_expiry = recovery_code_expiry
-            mysql.connection.commit()
-            # Use a third-party email service to send the recovery code to the user's email address
-            # ...
-            return render_template('password_recovery_validate.html', email=email)
-        else:
-            return render_template('password_recovery.html', error='Invalid email address')
-    else:
-        return render_template('password_recovery.html')
-
-
 from flask_mail import Message, Mail
 mail = Mail(app)
 
