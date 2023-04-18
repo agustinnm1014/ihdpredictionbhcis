@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 15, 2023 at 03:18 PM
+-- Generation Time: Apr 17, 2023 at 05:44 PM
 -- Server version: 10.4.27-MariaDB
 -- PHP Version: 8.2.0
 
@@ -92,14 +92,6 @@ CREATE TABLE `consultation_record` (
   `onset_date` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `consultation_record`
---
-
-INSERT INTO `consultation_record` (`consultation_number`, `patients_id`, `systolic`, `diastolic`, `pulse_rate`, `weight`, `height`, `temperature`, `allergies`, `consultation`, `diagnosis`, `treatment_date`, `medicine_treatment`, `encoder`, `remarks`, `consultant`, `encoded_date`, `onset_date`) VALUES
-(32, 38, 110, 90, '97.0', '67.0', '159.0', '36.4', 'none', 'ubo', 'sipon', '2023-04-14 10:28:53', 'paracetamol', 'Ronnie Edec', '', 'Loresita A. Rebong (Nurse', '2023-04-14', '2023-04-10'),
-(34, 38, 110, 90, '37.5', '67.0', '156.0', '36.5', 'none', 'ubo', 'sipon', '2023-04-14 12:55:20', 'kiss', 'Ronnie Edec', 'rest', 'Loresita A. Rebong (Nurse', '2023-04-14', '2023-04-14');
-
 -- --------------------------------------------------------
 
 --
@@ -113,16 +105,6 @@ CREATE TABLE `family_record` (
   `contact_no` varchar(50) NOT NULL,
   `patients_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `family_record`
---
-
-INSERT INTO `family_record` (`family_id`, `family_name`, `address`, `contact_no`, `patients_id`) VALUES
-(34, 'Edec', 'Blk 29 Lot 32 Site 3', '09212182211', 39),
-(35, 'Ordillano', 'Blk 29 Lot 32 Site 3', '921218221', 1),
-(36, 'Montenegro', 'blk 37 lot 70', '908778926', 0),
-(37, 'Bongat', 'Blk 18 Lot 79 Site 3', '908778926', 0);
 
 -- --------------------------------------------------------
 
@@ -164,14 +146,6 @@ CREATE TABLE `immunization_record` (
   `reason` varchar(25) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `immunization_record`
---
-
-INSERT INTO `immunization_record` (`immunization_number`, `id`, `weight`, `height`, `immunization`, `dose`, `immunization_date`, `encoded`, `encoder`, `consultant`, `route`, `status`, `reason`) VALUES
-(93, 36, '67.0', '156.0', 'MCV 2', '0.5', '2023-04-14 10:46:58', '2023-04-14', 'Ronnie Edec', 'Heidi Buera Alcos (Midwif', 'Oral', 'Vaccinated', ''),
-(94, 36, '64.4', '156.0', 'PCV 3', '0.5', '2023-04-14 13:02:06', '2023-04-06', 'Ronnie Edec', 'Loresita Amoranto Rebong ', 'Right Deltoid (Subcutaneo', 'Vaccinated', 'may lagnat');
-
 -- --------------------------------------------------------
 
 --
@@ -192,13 +166,6 @@ CREATE TABLE `newborn_record` (
   `contact_no` varchar(50) NOT NULL,
   `immunization_number` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `newborn_record`
---
-
-INSERT INTO `newborn_record` (`id`, `lastname`, `firstname`, `middlename`, `suffix`, `gname`, `address`, `birthday`, `age`, `sex`, `contact_no`, `immunization_number`) VALUES
-(36, 'Edec', 'Ronnie', 'Velasco', '', 'Raymond', 'Blk 18 Lot 79 Site 3', '2023-01-13', 3, 'Male', '908778926', 94);
 
 -- --------------------------------------------------------
 
@@ -226,15 +193,6 @@ CREATE TABLE `patients_record` (
   `family_medical` varchar(25) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `patients_record`
---
-
-INSERT INTO `patients_record` (`patients_id`, `lastname`, `firstname`, `middlename`, `suffix`, `address`, `birthday`, `age`, `sex`, `contact_no`, `email`, `consultation_number`, `prediction_number`, `family_id`, `systems`, `past_medical`, `family_medical`) VALUES
-(38, 'Edec', 'Ronnie', 'Velasco', '', 'Blk 18 Lot 79 Site 3', '1980-04-14', 43, 'Male', '908778926', '', 33, 16, 34, 'Diarrhea', 'Allergy', 'Allergy,Cancer'),
-(39, 'Ordillano', 'Homer', 'Ibanez', '', 'Blk 18 Lot 79 Site 3', '1966-02-02', 57, 'Male', '0908778926', '', NULL, 1, 35, 'Constipation,Pain on Urin', 'Allergy,PTB', 'Cancer,History of Surgery'),
-(40, 'Montenegro', 'Agustin', 'Allerite', '', 'Blk 29 Lot 32 Site 3', '2000-08-02', 22, 'Male', '0921218221', '', 1, NULL, 34, '', '', '');
-
 -- --------------------------------------------------------
 
 --
@@ -253,16 +211,6 @@ CREATE TABLE `prediction_record` (
   `treated_bp` int(11) NOT NULL,
   `risk_score` double NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `prediction_record`
---
-
-INSERT INTO `prediction_record` (`prediction_number`, `patients_id`, `sex`, `age`, `smoker`, `total_chol`, `hdl_chol`, `systolic`, `treated_bp`, `risk_score`) VALUES
-(12, 38, 1, 43, 1, 100, 75, 83, 1, 0.016337500845049206),
-(14, 38, 1, 43, 1, 202, 75, 110, 0, 0.06966458024008668),
-(15, 38, 1, 43, 1, 202, 55, 110, 0, 0.07598062168038858),
-(16, 38, 1, 43, 1, 150, 75, 110, 0, 0.031054253559265874);
 
 -- --------------------------------------------------------
 
@@ -332,13 +280,6 @@ CREATE TABLE `prenatal_record` (
   `id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `prenatal_record`
---
-
-INSERT INTO `prenatal_record` (`patients_id`, `name`, `address`, `age`, `birthday`, `husband`, `civil_status`, `contact_no`, `philhealth_no`, `lmp`, `pmp`, `edc`, `ob_score`, `past_medical`, `family_medical`, `history_of_infection`, `age_in_months`, `id`) VALUES
-(22, 'Joseph P. Replentes', 'Blk 18 Lot 79 Site 3', 0, '2023-04-11', 'Agustin Montenegro', 'Single', '09087789261', 'Yes', '2023-04-10', '2023-04-11', '2023-04-26', 'G2 P1 (1,0,0,1)', 'None', 'None', '', NULL, NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -363,10 +304,7 @@ INSERT INTO `user` (`userid`, `name`, `email`, `password`, `user_type`, `recover
 (6, 'Loresita A. Rebong', 'loresita@gmail.com', '12345', 'admin', ''),
 (8, 'BHW Edna', 'edna@gmail.com', '12345', '', ''),
 (9, 'BHW Marites Cao', 'marites@gmail.com', '12345', '', ''),
-(10, 'admin', 'admin@gmail.com', 'admin123', 'admin', ''),
-(11, 'Ronnie Edec', 'Ronnie@gmail.com', '123', '', 'a96685c8-353d-4457-92c1-f2ed3f66cff9'),
-(12, 'Agustin', 'agustin@g.com', '12', '', ''),
-(13, 'Agustin', 'agustin@gmail.com', '12345', '', '');
+(10, 'admin', 'admin@gmail.com', 'admin123', 'admin', '');
 
 --
 -- Indexes for dumped tables
@@ -470,7 +408,7 @@ ALTER TABLE `archived_record`
 -- AUTO_INCREMENT for table `consultation_record`
 --
 ALTER TABLE `consultation_record`
-  MODIFY `consultation_number` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `consultation_number` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
 
 --
 -- AUTO_INCREMENT for table `family_record`
@@ -500,13 +438,13 @@ ALTER TABLE `newborn_record`
 -- AUTO_INCREMENT for table `patients_record`
 --
 ALTER TABLE `patients_record`
-  MODIFY `patients_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `patients_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
 
 --
 -- AUTO_INCREMENT for table `prediction_record`
 --
 ALTER TABLE `prediction_record`
-  MODIFY `prediction_number` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `prediction_number` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `prenatal_consultation`
@@ -524,7 +462,7 @@ ALTER TABLE `prenatal_record`
 -- AUTO_INCREMENT for table `user`
 --
 ALTER TABLE `user`
-  MODIFY `userid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `userid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- Constraints for dumped tables
