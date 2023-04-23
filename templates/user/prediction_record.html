@@ -187,7 +187,6 @@ label[for="radio-1"], label[for="radio-2"] {
           <thead>
             <tr>
              
-       
               <th scope="col" class="text-center">Lastname</th>
               <th scope="col" class="text-center">Firstname</th>
               <th scope="col" class="text-center">Middlename</th>
@@ -221,9 +220,102 @@ label[for="radio-1"], label[for="radio-2"] {
                   <div style="display: flex; gap: 5px;">
                     
                     <a href="/delete_prediction/{{row[1] }}" onclick="return confirm('Are You Sure You Want To Delete this Record?')" class="btn btn-danger btn-sm">Delete</a>
+                    <a href="" class="btn btn-success btn-sm" data-toggle="modal" data-target="#predictiondetails{{row.1}}">Details</a>
                   </div>
                 </td>
               </tr>
+
+              
+      <!-- Enter New Patient Modal -->
+      <div id="predictiondetails{{row.1}}" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title text-primary text-center">Patient Prediction Details</h5>    
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <h4 class="text-center mb-4">PATIENT INFORMATION</h4>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <p class="font-weight-bold mb-1 text-dark">Last Name:</p>
+                  <input type="text" class="form-control" readonly value="{{row.2}}">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <p class="font-weight-bold mb-1 text-dark">First Name:</p>
+                  <input type="text" class="form-control" readonly value="{{row.3}}">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <p class="font-weight-bold mb-1 text-dark">Middle Name:</p>
+                  <input type="text" class="form-control" readonly value="{{row.4}}">
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <p class="font-weight-bold mb-1 text-dark" style="margin-bottom: 0;">Sex:</p>
+                  <input type="text" class="form-control" readonly style="margin-top: 0; color: {{ 'blue' if row[5] == 1 else 'inherit' }};" value="{{ 'Female' if row[5] == 0 else 'Male' }}">
+              </div>
+              
+                <div class="col-md-4 mb-3">
+                  <p class="font-weight-bold mb-1 text-dark">Age:</p>
+                  <input type="text" class="form-control" readonly value="{{row.6}}">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <p class="font-weight-bold mb-1 text-dark">Smoker:</p>
+                  <input type="text" class="form-control" readonly value="{{ 'No' if row[10] == 0 else 'Yes' }}" style="color: {{ 'black' if row[10] == 0 else 'red' }};">
+              </div>
+              
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <p class="font-weight-bold mb-1 text-dark">Total Cholesterol:</p>
+                    <input type="text" class="form-control" readonly value="{{row.7}}">
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <p class="font-weight-bold mb-1 text-dark">HDL Cholesterol:</p>
+                    <input type="text" class="form-control" readonly value="{{row.8}}">
+                  </div>
+                  
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                      <p class="font-weight-bold mb-1 text-dark">Systolic BP:</p>
+                      <input type="text" class="form-control" readonly value="{{row.9}}">
+                 
+                  </div>
+                 
+                  <div class="col-md-6 mb-3">
+                      <p class="font-weight-bold mb-1 text-dark">Blood Pressure Medication:</p>
+                    
+                          <span class="{{ 'text-danger bg-light' if row[11] == 0 else 'text-primary bg-light' }}">
+                            <input type="text" class="form-control" readonly value="{{ 'No' if row[11] == 0 else 'Yes' }}" style="color: {{ 'green' if row[11] == 1 else 'red' }};">
+                          </span>
+                 
+                  </div>
+              </div>
+              <hr>
+          </div>
+          
+          <div style="background-color: #fafafa; padding: 20px;">
+            <h4 style="color: #4d4d4d;">Prediction Result:</h4>
+            <div style="display: flex; align-items: center;">
+              <p style="font-size: 20px; margin: 0; font-family: Arial; text-align: justify;"><strong>You have a {{ '{:.2%}'.format(row[12]) }} chance of having ISCHEMIC HEART DISEASE based on your Predictors above.</strong></p>
+            </div>
+            
+          
+                  
+                  
+                   
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- End of Edit Patient Modal -->
       <!-- Enter New Patient Modal -->
       <div id="myUpdatePrediction{{row.1}}" class="modal fade" role="dialog">
           <div class="modal-dialog">
@@ -307,6 +399,49 @@ label[for="radio-1"], label[for="radio-2"] {
   
   
       <!-- End of Edit Patient Modal -->
+
+      <!-- Enter New Patient Modal -->
+      <div id="predictiondetails{{row.1}}" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+   
+                <div class="modal-header">
+                    <h5 class="modal-title text-primary" style="align-content: center;">Update Prediction Details</h5>    
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                    </button>
+                  </div>
+                  
+
+                <div class="modal-body">
+                  <form>
+                    <div class="form-group">
+                      <label for="name">Name:</label>
+                      <input type="text" class="form-control" id="name" value="{{row.1}}">
+                    </div>
+                    <div class="form-group">
+                      <label for="age">Age:</label>
+                      <input type="text" class="form-control" id="age" value="{{row.2}}">
+                    </div>
+                    <div class="form-group">
+                      <label for="gender">Gender:</label>
+                      <input type="text" class="form-control" id="gender" value="{{row.3}}">
+                    </div>
+                    <div class="form-group">
+                      <label for="prediction">Prediction:</label>
+                      <input type="text" class="form-control" id="prediction" value="{{row.4}}">
+                    </div>
+                  </form>
+                   
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- End of Edit Patient Modal -->
 
 
       {% endfor %}

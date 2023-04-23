@@ -19,34 +19,47 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 import secrets
 import uuid
+from flask_mail import Mail, Message
 
 
 
-  
+
+
 app = Flask(__name__)
-  
-  
+
+
 app.secret_key = 'xyzsdfg'
-  
+
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = ''
 app.config['MYSQL_DB'] = 'db_bhcms_final'
-  
+
 mysql = MySQL(app)
 
 
-  
+
+
 @app.route('/')
+
+
+@app.before_request
+def require_login():
+    allowed_routes = ['login', 'register','account_recovery'] # add the allowed routes here
+    if not request.endpoint.startswith('static') and request.endpoint not in allowed_routes and 'loggedin' not in session:
+        flash('You must be logged in to access this page', 'danger')
+        return redirect(url_for('login'))
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
     message = None
-    
+
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-      
+
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT * FROM user WHERE email = %s AND password = %s', (email, password,))
         user = cursor.fetchone()
@@ -56,17 +69,17 @@ def login():
             session['userid'] = user['userid']
             session['name'] = user['name']
             session['email'] = user['email']
-           
+
             message = 'You have successfully logged in!'
-            
+
             # check if user is admin and log them in
             if user['email'] == 'admin@gmail.com' and user['password'] == 'admin123':
                 session['is_admin'] = True
                 return redirect(url_for('dashboard'))
-            
+
             else:
                 return redirect(url_for('home'))
-        
+
         else:
             error = 'Invalid email or password. Please try again.'
             flash(error, 'danger')
@@ -74,14 +87,14 @@ def login():
     return render_template('login.html', error=error, message=message)
 
 
-  
+
 @app.route('/logout')
 def logout():
     session.pop('loggedin', None)
     session.pop('userid', None)
     session.pop('email', None)
     return redirect(url_for('login'))
-  
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     message = ''
@@ -111,6 +124,8 @@ def register():
         message = 'Please fill out the form!'
         alert_type = 'danger'
     return render_template('register.html', message=message, alert_type=alert_type)
+
+
 
 from flask_mail import Message, Mail
 mail = Mail(app)
@@ -206,7 +221,7 @@ def insert_family():
         cur.execute("INSERT INTO family_record (family_name, address,contact_no ) VALUES (%s, %s, %s)", (family_name,address,contact_no))
         mysql.connection.commit()
         return redirect(url_for('Family'))
-    
+
 # Delete Family Record
 @app.route('/delete_family/<string:family_id_data>', methods = ['GET'])
 def delete_family(family_id_data):
@@ -234,7 +249,7 @@ def update_family():
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('Family'))
-    
+
 
 
 @app.route('/view_members/<int:family_id>', methods=['GET'])
@@ -263,13 +278,13 @@ def view_members(family_id):
             message = "No records found."
     else:
             message = ""
-            
+
     pagination = Pagination(page=page, total=total_records, per_page=per_page)
 
     return render_template('user/view_members.html', patients_record=data, message=message, family_id=family_id, pagination=pagination)
 
 
-   
+
 # Home
 @app.route('/home')
 def home():
@@ -309,8 +324,8 @@ def insert_members():
     if request.method == "POST":
         flash("Data Inserted Successfully")
         family_id = request.form['family_id']
-        
-        lastname = request.form['lastname']    
+
+        lastname = request.form['lastname']
         firstname = request.form['firstname']
         middlename = request.form['middlename']
         suffix = request.form['suffix']
@@ -321,42 +336,42 @@ def insert_members():
         today = date.today()
         age = today.year - birthday.year - ((today.month, today.day) < (birthday.month, birthday.day))
 
-        
+
         sex = request.form['sex']
         contact_no = request.form['contact_no']
-        
-        
+
+
         cur = mysql.connection.cursor()
-        
+
         # Get the maximum patient_id for the given family_id
         cur.execute("SELECT MAX(patients_id) FROM patients_record WHERE family_id = %s", [family_id])
         max_patients_id = cur.fetchone()[0]
-        
+
         # Increment the patient_id by 1
         if max_patients_id is None:
             patients_id = 1
         else:
             patients_id = max_patients_id + 1
-            
+
         # Insert the new patient record into patients_record table
         cur.execute("INSERT INTO patients_record (family_id,lastname, firstname, middlename, suffix, address, birthday, age, sex, contact_no) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (family_id,lastname, firstname, middlename, suffix, address, birthday, age, sex, contact_no))
-        
+
         # Update the patient_id for the given family_id in the family_record table
         cur.execute("UPDATE family_record SET patients_id = %s WHERE family_id = %s", [patients_id, family_id])
-        
+
         mysql.connection.commit()
-        
+
         return redirect(url_for('Family'))
 
 
-# Add Consultation Record in View Consultation 
+# Add Consultation Record in View Consultation
 @app.route('/insert_view_members', methods=['POST'])
 def insert_view_members():
      if request.method == "POST":
         flash("Data Inserted Successfully")
         family_id = request.form['family_id']
-        
-        lastname = request.form['lastname']    
+
+        lastname = request.form['lastname']
         firstname = request.form['firstname']
         middlename = request.form['middlename']
         suffix = request.form['suffix']
@@ -369,34 +384,34 @@ def insert_view_members():
 
         sex = request.form['sex']
         contact_no = request.form['contact_no']
-        
+
         # Concatenate all selected systems into a comma-separated string
         systems = ",".join(request.form.getlist("systems"))
         # Concatenate all selected past medical record into a comma-separated string
         past_medical = ",".join(request.form.getlist("past_medical"))
         # Concatenate all selected family medical record into a comma-separated string
         family_medical = ",".join(request.form.getlist("family_medical"))
-        
+
         cur = mysql.connection.cursor()
-        
+
         # Get the maximum patient_id for the given family_id
         cur.execute("SELECT MAX(patients_id) FROM patients_record WHERE family_id = %s", [family_id])
         max_patients_id = cur.fetchone()[0]
-        
+
         # Increment the patient_id by 1
         if max_patients_id is None:
             patients_id = 1
         else:
             patients_id = max_patients_id + 1
-            
+
         # Insert the new patient record into patients_record table
         cur.execute("INSERT INTO patients_record (family_id,lastname, firstname, middlename, suffix, address, birthday, age, sex, contact_no,systems,past_medical,family_medical) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,%s)", (family_id, lastname, firstname, middlename, suffix, address, birthday, age, sex, contact_no, systems,past_medical,family_medical))
-        
+
         # Update the patient_id for the given family_id in the family_record table
         cur.execute("UPDATE family_record SET patients_id = %s WHERE family_id = %s", [patients_id, family_id])
-        
+
         mysql.connection.commit()
-        
+
         return redirect(url_for('Family'))
 
 # Delete Patients Record
@@ -419,11 +434,11 @@ def update():
         suffix = request.form['suffix']
         address = request.form['address']
         birthday = request.form['birthday']
-        
+
         # Calculate age based on updated birthday
         today = date.today()
         age = today.year - datetime.strptime(birthday, '%Y-%m-%d').year - ((today.month, today.day) < (datetime.strptime(birthday, '%Y-%m-%d').month, datetime.strptime(birthday, '%Y-%m-%d').day))
-        
+
         sex = request.form['sex']
         contact_no = request.form['contact_no']
 
@@ -435,10 +450,10 @@ def update():
 
         # Concatenate all selected systems into a comma-separated string
         family_medical = ",".join(request.form.getlist("family_medical"))
-       
+
         cur = mysql.connection.cursor()
         cur.execute("""
-        UPDATE patients_record 
+        UPDATE patients_record
         SET lastname=%s, firstname=%s, middlename=%s, suffix=%s, address=%s, birthday=%s, age=%s, sex=%s, contact_no=%s, systems=%s, past_medical=%s,family_medical=%s
         WHERE patients_id=%s
 
@@ -449,7 +464,7 @@ def update():
         return redirect(url_for('Family'))
 
 
-# Display Consultation Record    
+# Display Consultation Record
 @app.route('/Consultation', methods=['GET'])
 def Consultation():
     page = request.args.get(get_page_parameter(), type=int, default=1)
@@ -506,25 +521,25 @@ def view_consultations(patients_id):
 
 
 
-# Add Consultation Record in View Consultation 
+# Add Consultation Record in View Consultation
 @app.route('/insert_view_consultation', methods=['POST'])
 def insert_view_consultation():
     if request.method == "POST":
         flash("Data Inserted Successfully")
         patients_id = request.form['patients_id']
-        
+
         # get the maximum consultation number for the patient
         cur = mysql.connection.cursor()
         cur.execute("SELECT MAX(consultation_number) FROM consultation_record WHERE patients_id = %s", [patients_id])
         max_consultation_number = cur.fetchone()[0]
-        
+
         # increment the consultation number by 1
         if max_consultation_number is None:
             consultation_number = 1
         else:
             consultation_number = max_consultation_number + 1
-            
-        bp = request.form['bp']    
+
+        bp = request.form['bp']
         pulse_rate = decimal.Decimal(request.form['pulse_rate'])
         weight = decimal.Decimal(request.form['weight'])
         height = decimal.Decimal(request.form['height'])
@@ -539,15 +554,15 @@ def insert_view_consultation():
         consultant = request.form['consultant']
         cur.execute("INSERT INTO consultation_record (patients_id, bp, pulse_rate, weight, height, temperature, allergies, consultation, diagnosis, medicine_treatment, treatment_date, remarks, encoder,consultant) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s)", (patients_id, bp, pulse_rate, weight, height, temperature, allergies, consultation, diagnosis, medicine_treatment, treatment_date, remarks, encoder,consultant))
         mysql.connection.commit()
-        
+
         # update the consultation number in the patients_record table
         cur.execute("UPDATE patients_record SET consultation_number = %s WHERE patients_id = %s", [consultation_number, patients_id])
         mysql.connection.commit()
-        
+
         return redirect(url_for('Consultation'))
 
 
-# Update View Consultation Record  
+# Update View Consultation Record
 @app.route('/update_view_consultation', methods= ['POST', 'GET'])
 def update_view_consultation():
     if request.method == 'POST':
@@ -576,29 +591,29 @@ def update_view_consultation():
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('Consultation'))
-    
-# Add Consultation Record  
+
+# Add Consultation Record
 @app.route('/insert_consultation', methods=['POST'])
 def insert_consultation():
     if request.method == "POST":
         flash("Data Inserted Successfully")
         patients_id = request.form['patients_id']
-        
+
         # get the maximum consultation number for the patient
         cur = mysql.connection.cursor()
         cur.execute("SELECT MAX(consultation_number) FROM consultation_record WHERE patients_id = %s", [patients_id])
         max_consultation_number = cur.fetchone()[0]
-        
+
         # increment the consultation number by 1
         if max_consultation_number is None:
             consultation_number = 1
         else:
             consultation_number = max_consultation_number + 1
-            
+
         systolic = request.form['systolic']
         diastolic = request.form['diastolic']
-        onset_date = request.form['onset_date']  
-        encoded_date = request.form['encoded_date']      
+        onset_date = request.form['onset_date']
+        encoded_date = request.form['encoded_date']
         pulse_rate = decimal.Decimal(request.form['pulse_rate'])
         weight = decimal.Decimal(request.form['weight'])
         height = decimal.Decimal(request.form['height'])
@@ -613,13 +628,13 @@ def insert_consultation():
         consultant = request.form['consultant']
         cur.execute("INSERT INTO consultation_record (patients_id, systolic,diastolic, pulse_rate, weight, height, temperature, allergies, consultation, diagnosis, medicine_treatment, treatment_date, remarks, encoder,consultant,onset_date,encoded_date) VALUES (%s,%s,%s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s)", (patients_id, systolic,diastolic, pulse_rate, weight, height, temperature, allergies, consultation, diagnosis, medicine_treatment, treatment_date, remarks, encoder,consultant,onset_date,encoded_date))
         mysql.connection.commit()
-        
+
         # update the consultation number in the patients_record table
         cur.execute("UPDATE patients_record SET consultation_number = %s WHERE patients_id = %s", [consultation_number, patients_id])
         mysql.connection.commit()
-        
+
         return redirect(url_for('Consultation'))
- # Delete Consultation Record     
+ # Delete Consultation Record
 @app.route('/delete_consultation/<string:consultation_number_data>', methods=['GET'])
 def delete_consultation(consultation_number_data):
     try:
@@ -634,7 +649,7 @@ def delete_consultation(consultation_number_data):
         flash("An error occurred while deleting the record: " + str(e))
         return redirect(url_for('Consultation'))
 
-# Update Consultation Record  
+# Update Consultation Record
 @app.route('/update_consultation', methods= ['POST', 'GET'])
 def update_consultation():
     if request.method == 'POST':
@@ -652,8 +667,8 @@ def update_consultation():
         treatment_date = datetime.now()
         remarks = request.form['remarks']
         consultant = request.form['consultant']
-        onset_date = request.form['onset_date']  
-        encoded_date = request.form['encoded_date'] 
+        onset_date = request.form['onset_date']
+        encoded_date = request.form['encoded_date']
         cur = mysql.connection.cursor()
         cur.execute("""
         UPDATE consultation_record SET  systolic=%s, diastolic=%s, pulse_rate=%s, weight=%s, height=%s, temperature=%s, allergies=%s, consultation=%s, diagnosis=%s,medicine_treatment=%s, treatment_date=%s, remarks=%s,consultant=%s,onset_date=%s,encoded_date=%s
@@ -663,10 +678,10 @@ def update_consultation():
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('Consultation'))
-    
-    
-    
-# Display Newborn Record      
+
+
+
+# Display Newborn Record
 @app.route('/Newborn')
 def Newborn():
     page = request.args.get(get_page_parameter(), type=int, default=1)
@@ -697,7 +712,7 @@ def Newborn():
     return render_template('user/newborn_record.html', newborn_record=data, message=message, pagination=pagination)
 
 
-# Add Newborn Record  
+# Add Newborn Record
 @app.route('/insert_newborn', methods = ['POST'])
 def insert_newborn():
     if request.method == "POST":
@@ -725,8 +740,8 @@ def insert_newborn():
         cur.execute("INSERT INTO newborn_record (lastname, firstname,middlename,gname,suffix,address,birthday,age,sex,contact_no) VALUES (%s,%s, %s, %s, %s, %s, %s, %s, %s,%s)", (lastname,firstname,middlename,gname,suffix,address,birthday,age,sex,contact_no))
         mysql.connection.commit()
         return redirect(url_for('Newborn'))
-    
-# Update Newborn Record      
+
+# Update Newborn Record
 @app.route('/update_newborn', methods= ['POST', 'GET'])
 def update_newborn():
     if request.method == 'POST':
@@ -741,7 +756,7 @@ def update_newborn():
         age = request.form['age']
         sex = request.form['sex']
         contact_no = request.form['contact_no']
-    
+
         cur = mysql.connection.cursor()
         cur.execute("""
         UPDATE newborn_record SET lastname=%s, firstname=%s, middlename=%s, gname=%s, suffix=%s, address=%s, birthday=%s, age=%s,sex=%s, contact_no=%s
@@ -761,7 +776,7 @@ def delete_newborn(id_data):
     mysql.connection.commit()
     return redirect(url_for('Newborn'))
 
-# Display Immunization Record  
+# Display Immunization Record
 @app.route('/Immunization', methods=['GET'])
 def Immunization():
     # Set up pagination
@@ -794,14 +809,14 @@ def Immunization():
     return render_template('user/immunization_record.html', immunization_record=data, message=message, pagination=pagination)
 
 
-# View all Immunization Records 
+# View all Immunization Records
 @app.route('/view_immunization/<int:id>', methods=['GET'])
 def view_immunization(id):
     page = request.args.get(get_page_parameter(), type=int, default=1)
     per_page = 10  # Number of records to display per page
 
     cur = mysql.connection.cursor()
-    cur.execute("SELECT COUNT(*) FROM immunization_record WHERE id = %s", (id,)) 
+    cur.execute("SELECT COUNT(*) FROM immunization_record WHERE id = %s", (id,))
     total_records = cur.fetchone()[0]
 
     cur.execute("SELECT * FROM immunization_record WHERE id = %s LIMIT %s OFFSET %s", (id, per_page, (page - 1) * per_page))
@@ -817,27 +832,27 @@ def view_immunization(id):
 
     return render_template('user/view_immunization.html', immunization_record=rows, message=message, pagination=pagination)
 
-# Add Immunization Record  
+# Add Immunization Record
 @app.route('/insert_immunization', methods=['POST'])
 def insert_immunization():
     if request.method == "POST":
         flash("Data Inserted Successfully")
         id = request.form['id']
-        
+
         # get the maximum immunization number for the patient
         cur = mysql.connection.cursor()
         cur.execute("SELECT MAX(immunization_number) FROM immunization_record WHERE id = %s", [id])
         max_immunization_number = cur.fetchone()[0]
-        
+
         # increment the immunization number by 1
         if max_immunization_number is None:
             immunization_number = 1
         else:
             immunization_number = max_immunization_number + 1
-        
+
         weight = decimal.Decimal(request.form['weight'])
         height = decimal.Decimal(request.form['height'])
-        
+
         # get the selected immunizations
         immunization = request.form['immunization']
         status = request.form['status']
@@ -848,22 +863,22 @@ def insert_immunization():
         immunization_date = datetime.now()
         encoder = session.get('name')  # get the user_id of the currently logged-in user
         consultant = request.form['consultant']
-        
+
         # insert the immunization record for each selected immunization
-       
+
         cur.execute("INSERT INTO immunization_record (id, weight, height, immunization, dose, route, immunization_date,encoded, encoder,consultant,status,reason) VALUES (%s, %s, %s, %s, %s, %s, %s, %s,%s, %s,%s,%s)", (id, weight, height, immunization, dose, route, immunization_date,encoded, encoder,consultant,status,reason))
-        
+
         mysql.connection.commit()
-        
+
         # update the immunization number in the newborn_record table
         cur.execute("UPDATE newborn_record SET immunization_number = %s WHERE id = %s", [immunization_number, id])
         mysql.connection.commit()
-        
+
         return redirect(url_for('Newborn'))
 
 
-    
-# Update View Immunization Record  
+
+# Update View Immunization Record
 @app.route('/update_view_immunization', methods= ['POST', 'GET'])
 def update_view_immunization():
     if request.method == 'POST':
@@ -890,7 +905,7 @@ def update_view_immunization():
         return redirect(url_for('Newborn'))
 
 
-# Delete Immunization Record 
+# Delete Immunization Record
 @app.route('/delete_immunization/<string:immunization_number_data>', methods=['GET'])
 def delete_immunization(immunization_number_data):
     try:
@@ -905,14 +920,14 @@ def delete_immunization(immunization_number_data):
         flash("An error occurred while deleting the record: " + str(e))
         return redirect(url_for('Immunization'))
 
-# Update Immunization Record 
+# Update Immunization Record
 @app.route('/update_immunization', methods= ['POST', 'GET'])
 def update_immunization():
     if request.method == 'POST':
         immunization_number = request.form['immunization_number']
         weight = decimal.Decimal(request.form['weight'])
         height = decimal.Decimal(request.form['height'])
-      
+
         dose = request.form['dose']
         encoded = request.form['encoded']
         route = request.form['route']
@@ -988,81 +1003,81 @@ def insert_prenatal():
         cur.execute("INSERT INTO prenatal_record (name, address,birthday,age,husband,civil_status, contact_no,philhealth_no,lmp,pmp,edc,ob_score,past_medical,family_medical ) VALUES (%s,%s, %s, %s, %s, %s, %s, %s,%s,%s,%s,%s,%s,%s)", (name, address,birthday,age,husband,civil_status, contact_no,philhealth_no,lmp,pmp,edc,ob_score,past_medical,family_medical))
         mysql.connection.commit()
         return redirect(url_for('Prenatal'))
-    
 
-# Add Prenatal Consultation Record  
+
+# Add Prenatal Consultation Record
 @app.route('/insert_prenatal_consultation', methods=['POST'])
 def insert_prenatal_consultation():
     if request.method == "POST":
         flash("Data Inserted Successfully")
         patients_id = request.form['patients_id']
-        
+
         # get the maximum consultation number for the patient
         cur = mysql.connection.cursor()
         cur.execute("SELECT MAX(age_in_months) FROM prenatal_consultation WHERE patients_id = %s", [patients_id])
         max_age_in_months = cur.fetchone()[0]
-        
+
         # increment the consultation number by 1
         if  max_age_in_months is None:
             age_in_months = 1
         else:
             age_in_months =  max_age_in_months + 1
 
-        pregnancy_month = request.form['pregnancy_month'] 
-        aog = request.form['aog']   
-        bp = request.form['bp']    
-        pulse_rate = request.form['pulse_rate']  
-        respiratory_rate = request.form['respiratory_rate'] 
-        weight = request.form['weight']  
+        pregnancy_month = request.form['pregnancy_month']
+        aog = request.form['aog']
+        bp = request.form['bp']
+        pulse_rate = request.form['pulse_rate']
+        respiratory_rate = request.form['respiratory_rate']
+        weight = request.form['weight']
         height = decimal.Decimal(request.form['height'])
         temperature = decimal.Decimal(request.form['temperature'])
-        bmi = request.form['bmi'] 
-        fundic_height = request.form['fundic_height'] 
-        fetal_heart_tone = request.form['fetal_heart_tone']  
-        presentation = request.form['presentation'] 
-        unconscious_convulsing = request.form['unconscious_convulsing'] 
-        vaginal_bleeding = request.form['vaginal_bleeding'] 
+        bmi = request.form['bmi']
+        fundic_height = request.form['fundic_height']
+        fetal_heart_tone = request.form['fetal_heart_tone']
+        presentation = request.form['presentation']
+        unconscious_convulsing = request.form['unconscious_convulsing']
+        vaginal_bleeding = request.form['vaginal_bleeding']
         abdominal_pain = request.form['abdominal_pain']
-        looks = request.form['looks']  
-        headache = request.form['headache'] 
-        breathing = request.form['breathing'] 
-        fever = request.form['fever'] 
-        vomiting = request.form['vomiting'] 
-        edema = request.form['edema'] 
-        laboratory_utz = request.form['laboratory_utz'] 
-        tetanus_toxoid = request.form['tetanus_toxoid'] 
-        iron = request.form['iron'] 
-        antibiotics = request.form['antibiotics'] 
-        check_up = request.form['check_up'] 
+        looks = request.form['looks']
+        headache = request.form['headache']
+        breathing = request.form['breathing']
+        fever = request.form['fever']
+        vomiting = request.form['vomiting']
+        edema = request.form['edema']
+        laboratory_utz = request.form['laboratory_utz']
+        tetanus_toxoid = request.form['tetanus_toxoid']
+        iron = request.form['iron']
+        antibiotics = request.form['antibiotics']
+        check_up = request.form['check_up']
         date=datetime.now()
-        encoded = request.form['encoded'] 
+        encoded = request.form['encoded']
         encoder = session.get('name')
-        consultant = request.form['consultant'] 
-        
+        consultant = request.form['consultant']
+
         cur.execute("INSERT INTO prenatal_consultation (patients_id, pregnancy_month, aog, bp, pulse_rate, respiratory_rate,weight, height, temperature, bmi, fundic_height, fetal_heart_tone, presentation, unconscious_convulsing, vaginal_bleeding, abdominal_pain,looks,headache,breathing,fever,vomiting,edema,laboratory_utz,tetanus_toxoid,iron,antibiotics,check_up,encoder,date,consultant,encoded) VALUES (%s,%s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,%s)", (patients_id, pregnancy_month, aog, bp, pulse_rate, respiratory_rate,weight, height, temperature, bmi, fundic_height, fetal_heart_tone, presentation, unconscious_convulsing, vaginal_bleeding, abdominal_pain,looks,headache,breathing,fever,vomiting,edema,laboratory_utz,tetanus_toxoid,iron,antibiotics,check_up,encoder,date,consultant,encoded))
         mysql.connection.commit()
-        
+
         # update the consultation number in the patients_record table
         cur.execute("UPDATE prenatal_record SET age_in_months = %s WHERE patients_id = %s", [age_in_months, patients_id])
         mysql.connection.commit()
-        
+
         return redirect(url_for('Prenatal'))
-    
+
 
 
 @app.route('/insert_gravida', methods=['POST'])
 def insert_gravida():
     if request.method == "POST":
         flash("Data Inserted Successfully")
-        
+
         patients_id = request.form['patients_id']
-        gravida = request.form['gravida'] 
-        term = request.form['term'] 
-        wt_sex = request.form['wt_sex'] 
-        mode = request.form['mode'] 
-        facility = request.form['facility'] 
-        complication = request.form['complication'] 
-        tt = request.form['tt'] 
+        gravida = request.form['gravida']
+        term = request.form['term']
+        wt_sex = request.form['wt_sex']
+        mode = request.form['mode']
+        facility = request.form['facility']
+        complication = request.form['complication']
+        tt = request.form['tt']
 
         cur = mysql.connection.cursor()
         cur.execute("INSERT INTO gravida (patients_id, gravida, term, wt_sex, mode, facility,complication, tt)VALUES (%s,%s, %s,%s, %s, %s, %s,%s)",(patients_id, gravida, term, wt_sex, mode, facility,complication, tt))
@@ -1084,7 +1099,7 @@ def delete_gravida(id_data):
 
 
 
-# View all Prenatal Consultation Records 
+# View all Prenatal Consultation Records
 @app.route('/view_prenatal_consultation/<int:patients_id>', methods=['GET'])
 def view_prenatal_consultation(patients_id):
     cur = mysql.connection.cursor()
@@ -1094,7 +1109,7 @@ def view_prenatal_consultation(patients_id):
     return render_template('user/view_prenatal_consultation.html', prenatal_consultation=rows)
 
 
-# View all Prenatal Consultation Records 
+# View all Prenatal Consultation Records
 @app.route('/view_gravida/<int:patients_id>', methods=['GET'])
 def view_gravida(patients_id):
     cur = mysql.connection.cursor()
@@ -1107,42 +1122,42 @@ def view_gravida(patients_id):
 
 
 
-# Update View Immunization Record  
+# Update View Immunization Record
 @app.route('/update_view_prenatal', methods= ['POST', 'GET'])
 def update_view_prenatal():
     if request.method == 'POST':
 
         age_in_months = request.form['age_in_months']
-        pregnancy_month = request.form['pregnancy_month'] 
-        aog = request.form['aog']   
-        bp = request.form['bp']    
-        pulse_rate = request.form['pulse_rate']  
-        respiratory_rate = request.form['respiratory_rate'] 
-        weight = request.form['weight']  
+        pregnancy_month = request.form['pregnancy_month']
+        aog = request.form['aog']
+        bp = request.form['bp']
+        pulse_rate = request.form['pulse_rate']
+        respiratory_rate = request.form['respiratory_rate']
+        weight = request.form['weight']
         height = decimal.Decimal(request.form['height'])
         temperature = decimal.Decimal(request.form['temperature'])
-        bmi = request.form['bmi'] 
-        fundic_height = request.form['fundic_height'] 
-        fetal_heart_tone = request.form['fetal_heart_tone']  
-        presentation = request.form['presentation'] 
-        unconscious_convulsing = request.form['unconscious_convulsing'] 
-        vaginal_bleeding = request.form['vaginal_bleeding'] 
+        bmi = request.form['bmi']
+        fundic_height = request.form['fundic_height']
+        fetal_heart_tone = request.form['fetal_heart_tone']
+        presentation = request.form['presentation']
+        unconscious_convulsing = request.form['unconscious_convulsing']
+        vaginal_bleeding = request.form['vaginal_bleeding']
         abdominal_pain = request.form['abdominal_pain']
-        looks = request.form['looks']  
-        headache = request.form['headache'] 
-        breathing = request.form['breathing'] 
-        fever = request.form['fever'] 
-        vomiting = request.form['vomiting'] 
-        edema = request.form['edema'] 
-        laboratory_utz = request.form['laboratory_utz'] 
-        tetanus_toxoid = request.form['tetanus_toxoid'] 
-        iron = request.form['iron'] 
-        antibiotics = request.form['antibiotics'] 
-        check_up = request.form['check_up'] 
+        looks = request.form['looks']
+        headache = request.form['headache']
+        breathing = request.form['breathing']
+        fever = request.form['fever']
+        vomiting = request.form['vomiting']
+        edema = request.form['edema']
+        laboratory_utz = request.form['laboratory_utz']
+        tetanus_toxoid = request.form['tetanus_toxoid']
+        iron = request.form['iron']
+        antibiotics = request.form['antibiotics']
+        check_up = request.form['check_up']
         date=datetime.now()
-        encoded = request.form['encoded'] 
+        encoded = request.form['encoded']
         encoder = session.get('name')
-        consultant = request.form['consultant'] 
+        consultant = request.form['consultant']
 
 
 
@@ -1158,20 +1173,20 @@ def update_view_prenatal():
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('Prenatal'))
-    
-# Update View Immunization Record  
+
+# Update View Immunization Record
 @app.route('/update_view_gravida', methods= ['POST', 'GET'])
 def update_view_gravida():
     if request.method == 'POST':
 
         id = request.form['id']
-        gravida = request.form['gravida'] 
-        term = request.form['term'] 
-        wt_sex = request.form['wt_sex'] 
-        mode = request.form['mode'] 
-        facility = request.form['facility'] 
-        complication = request.form['complication'] 
-        tt = request.form['tt'] 
+        gravida = request.form['gravida']
+        term = request.form['term']
+        wt_sex = request.form['wt_sex']
+        mode = request.form['mode']
+        facility = request.form['facility']
+        complication = request.form['complication']
+        tt = request.form['tt']
 
         cur = mysql.connection.cursor()
         cur.execute("""
@@ -1181,7 +1196,7 @@ def update_view_gravida():
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('Prenatal'))
-    
+
 
  # Deleete View Prenatal Consultation Record
 @app.route('/delete_view_prenatal/<string:age_in_months_data>', methods = ['GET'])
@@ -1235,7 +1250,7 @@ def delete_prenatal(patients_id_data):
     return redirect(url_for('Prenatal'))
 
 
-# Display Prediction Record    
+# Display Prediction Record
 @app.route('/Prediction', methods = ['GET'])
 def Prediction():
     page = request.args.get(get_page_parameter(), type=int, default=1)
@@ -1267,9 +1282,6 @@ def Prediction():
     return render_template('user/prediction_record.html', prediction_record=data, message=message, pagination=pagination)
 
 
-
-
-            
 # Add Prediction Record
 # Load the trained random forest regressor model from a file
 # Load the trained model from the file
@@ -1281,8 +1293,8 @@ def insert_prediction():
         flash("Data Inserted Successfully")
         patients_id = request.form['patients_id']
         cur = mysql.connection.cursor()
-        
-       
+
+
         # Retrieve age, sex, and systolic blood pressure of selected patient
         cur.execute("SELECT pr.age, pr.sex, cr.systolic FROM patients_record pr INNER JOIN consultation_record cr ON pr.patients_id = cr.patients_id WHERE pr.patients_id = %s", [patients_id])
         patient_data = cur.fetchone()
@@ -1309,9 +1321,9 @@ def insert_prediction():
         smoker = int(request.form.get('smoker'))
         total_chol = int(request.form.get('total_chol'))
         hdl_chol = int(request.form.get('hdl_chol'))
-      
+
         treated_bp = int(request.form.get('treated_bp'))
-        
+
         # Use the model to make a prediction on new data
         new_data = [age, sex, total_chol, hdl_chol, systolic, treated_bp, smoker]
         # Convert list to numpy array
@@ -1329,7 +1341,7 @@ def insert_prediction():
         mysql.connection.commit()
         return render_template('user/result.html', risk_score=risk_score)
 
-# Delete Prediction Record     
+# Delete Prediction Record
 @app.route('/delete_prediction/<string:prediction_number_data>', methods=['GET'])
 def delete_prediction(prediction_number_data):
     try:
@@ -1344,7 +1356,7 @@ def delete_prediction(prediction_number_data):
         flash("An error occurred while deleting the record: " + str(e))
         return redirect(url_for('Prediction'))
 
-# Update Prediction Record  
+# Update Prediction Record
 @app.route('/update_prediction', methods= ['POST', 'GET'])
 def update_prediction():
     if request.method == 'POST':
@@ -1356,7 +1368,7 @@ def update_prediction():
         hdl_chol = int(request.form.get('hdl_chol'))
         sbp = int(request.form.get('sbp'))
         treated_bp = int(request.form.get('treated_bp'))
-        
+
 
         cur = mysql.connection.cursor()
         cur.execute("""
@@ -1366,7 +1378,7 @@ def update_prediction():
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('Prediction'))
-    
+
 from datetime import datetime
 
 @app.route("/total_vaccinated", methods=["POST"])
@@ -1406,9 +1418,9 @@ def result():
 
 @app.route("/dashboard")
 def dashboard():
-    
+
     return render_template("admin/dashboard.html")
-    
+
 @app.route("/total_patients")
 def total_patients():
     cursor = mysql.connection.cursor()
@@ -1461,7 +1473,7 @@ def graph():
     cursor.execute("SELECT COUNT(*) FROM data")
     total_data = cursor.fetchone()[0]
     conn.close()
-    return render_template('admin/dashboard.html', total_data=total_data)   
+    return render_template('admin/dashboard.html', total_data=total_data)
 
 @app.route("/manage")
 def manage():
@@ -1472,10 +1484,10 @@ def manage():
     return render_template('admin/manage_user.html', user=rows)
 
 
-# Display User's Record  
+# Display User's Record
 @app.route('/view', methods=['GET'])
 def view():
-    
+
     return render_template('admin/manage_user.html')
 
 # Add user Record
@@ -1516,7 +1528,7 @@ def delete_user(user_id_data):
     mysql.connection.commit()
     return redirect(url_for('manage'))
 
- # Update Immunization Record 
+ # Update Immunization Record
 @app.route('/update_user', methods=['POST', 'GET'])
 def update_user():
     if request.method == 'POST':
@@ -1527,7 +1539,7 @@ def update_user():
         user_type = request.form['user_type']
         cur = mysql.connection.cursor()
         cur.execute("""
-            UPDATE user SET name=%s, email=%s, password=%s, user_type=%s 
+            UPDATE user SET name=%s, email=%s, password=%s, user_type=%s
             WHERE userid=%s
         """, (name, email, password, user_type, userid))
         flash("Data Updated Successfully")
@@ -1569,11 +1581,11 @@ def archive_newborn():
     if request.method == 'POST':
         # Retrieve the ID of the newborn record from the form data
         newborn_id = request.form['id']
-        
-        
+
+
 
         cursor = mysql.connection.cursor()
-        
+
         # Retrieve the data for the newborn and its corresponding immunization records
         cursor.execute("SELECT * FROM newborn_record WHERE id = %s", (newborn_id,))
         newborn_data = str(cursor.fetchone())
@@ -1582,7 +1594,7 @@ def archive_newborn():
             total_count = result[0]
         else:
             total_count = 0
-            
+
         cursor.execute("SELECT * FROM immunization_record WHERE id = %s", (newborn_id,))
         immunization_data = str(cursor.fetchall())
 
@@ -1599,7 +1611,7 @@ def archive_newborn():
         cursor.close()
 
         if not data:
-            mesage = "No records found."    
+            mesage = "No records found."
         else:
             mesage = ""
 
@@ -1721,7 +1733,7 @@ def archive_prenatal():
         data = cursor.fetchall()
 
         if not data:
-            mesage = "No records found."    
+            mesage = "No records found."
         else:
             mesage = ""
 
